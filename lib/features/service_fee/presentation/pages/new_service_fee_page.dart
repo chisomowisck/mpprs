@@ -62,7 +62,8 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
 
     final deadline = _requestDate.add(Duration(days: _category!.deadlineDays));
     context.pushReplacement('/offense/prn-issued', extra: {
-      'prn': 'MPPRS-${DateTime.now().year}-${(200000 + DateTime.now().millisecondsSinceEpoch % 800000)}',
+      // 'prn': 'MPPRS-${DateTime.now().year}-${(200000 + DateTime.now().millisecondsSinceEpoch % 800000)}',
+      'prn': '2656432895246',
       'vehicleReg': '',
       'offenderName': _nameCtrl.text.trim(),
       'categoryName': _category!.name,

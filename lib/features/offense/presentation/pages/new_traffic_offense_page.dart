@@ -27,8 +27,8 @@ class _NewTrafficOffensePageState extends State<NewTrafficOffensePage> {
   final _phoneCtrl = TextEditingController();
   final _licenseCtrl = TextEditingController();
 
-  // Offense
-  OffenseCategory? _category;
+  // Offense — now supports multiple categories
+  List<OffenseCategory> _categories = [];
   DateTime _offenseDate = DateTime.now();
   final _maltisCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
@@ -43,11 +43,18 @@ class _NewTrafficOffensePageState extends State<NewTrafficOffensePage> {
     super.dispose();
   }
 
-  Future<void> _pickCategory() async {
-    final result = await Navigator.of(context).push<OffenseCategory>(
-      MaterialPageRoute(builder: (_) => const CategoryPickerPage()),
+  Future<void> _pickCategories() async {
+    final result = await Navigator.of(context).push<List<OffenseCategory>>(
+      MaterialPageRoute(
+        builder: (_) => CategoryPickerPage(
+          multiSelect: true,
+          selectedCategories: _categories,
+        ),
+      ),
     );
-    if (result != null) setState(() => _category = result);
+    if (result != null && result.isNotEmpty) {
+      setState(() => _categories = result);
+    }
   }
 
   Future<void> _pickDate() async {
@@ -67,7 +74,7 @@ class _NewTrafficOffensePageState extends State<NewTrafficOffensePage> {
   bool _validateStep() {
     if (_step == 0) return _regCtrl.text.trim().isNotEmpty;
     if (_step == 1) return _nameCtrl.text.trim().isNotEmpty;
-    if (_step == 2) return _category != null;
+    if (_step == 2) return _categories.isNotEmpty;
     return true;
   }
 
@@ -83,14 +90,15 @@ class _NewTrafficOffensePageState extends State<NewTrafficOffensePage> {
   }
 
   void _submit() {
-    final fmt = NumberFormat('#,##0', 'en_US');
     context.push('/offense/review', extra: {
       'vehicleReg': _regCtrl.text.trim().toUpperCase(),
       'chassis': _chassisCtrl.text.trim(),
       'offenderName': _nameCtrl.text.trim(),
       'phone': _phoneCtrl.text.trim(),
       'license': _licenseCtrl.text.trim(),
-      'category': _category,
+      'categories': _categories,
+      // Keep 'category' for backward compat with review/confirm page
+      'category': _categories.isNotEmpty ? _categories.first : null,
       'offenseDate': _offenseDate,
       'maltisRef': _maltisCtrl.text.trim(),
       'location': _locationCtrl.text.trim(),
@@ -145,11 +153,22 @@ class _NewTrafficOffensePageState extends State<NewTrafficOffensePage> {
       case 1:
         return _OffenderStep(nameCtrl: _nameCtrl, phoneCtrl: _phoneCtrl, licenseCtrl: _licenseCtrl);
       case 2:
-        return _OffenseStep(category: _category, offenseDate: _offenseDate, maltisCtrl: _maltisCtrl, locationCtrl: _locationCtrl, onPickCategory: _pickCategory, onPickDate: _pickDate);
+        return _OffenseStep(
+          categories: _categories,
+          offenseDate: _offenseDate,
+          maltisCtrl: _maltisCtrl,
+          locationCtrl: _locationCtrl,
+          onPickCategories: _pickCategories,
+          onPickDate: _pickDate,
+          onRemoveCategory: (cat) => setState(() => _categories.remove(cat)),
+        );
       case 3:
         return _ReviewStep(
-          vehicleReg: _regCtrl.text.toUpperCase(), offenderName: _nameCtrl.text,
-          category: _category, offenseDate: _offenseDate, location: _locationCtrl.text,
+          vehicleReg: _regCtrl.text.toUpperCase(),
+          offenderName: _nameCtrl.text,
+          categories: _categories,
+          offenseDate: _offenseDate,
+          location: _locationCtrl.text,
         );
       default:
         return const SizedBox.shrink();
@@ -277,57 +296,118 @@ class _OffenderStep extends StatelessWidget {
 }
 
 class _OffenseStep extends StatelessWidget {
-  final OffenseCategory? category;
+  final List<OffenseCategory> categories;
   final DateTime offenseDate;
   final TextEditingController maltisCtrl, locationCtrl;
-  final VoidCallback onPickCategory, onPickDate;
+  final VoidCallback onPickCategories, onPickDate;
+  final void Function(OffenseCategory) onRemoveCategory;
 
-  const _OffenseStep({required this.category, required this.offenseDate, required this.maltisCtrl, required this.locationCtrl, required this.onPickCategory, required this.onPickDate});
+  const _OffenseStep({
+    required this.categories,
+    required this.offenseDate,
+    required this.maltisCtrl,
+    required this.locationCtrl,
+    required this.onPickCategories,
+    required this.onPickDate,
+    required this.onRemoveCategory,
+  });
 
   @override
   Widget build(BuildContext context) {
     final dateFmt = DateFormat(AppConstants.dateDisplayFormat);
     final currFmt = NumberFormat('#,##0', 'en_US');
+    final totalAmount = categories.fold<double>(0, (sum, c) => sum + c.defaultAmount);
+
     return Column(key: const ValueKey('offense'), crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _StepHeader(icon: Icons.traffic_rounded, title: 'Offense Details', subtitle: 'Select the category and fill offense details'),
+      _StepHeader(icon: Icons.traffic_rounded, title: 'Offense Details', subtitle: 'Select one or more offense categories'),
       const SizedBox(height: 20),
-      // Category picker
+
+      // ── Offense category picker button ──────────────────────────────
       GestureDetector(
-        onTap: onPickCategory,
+        onTap: onPickCategories,
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: AppColors.surfaceVariant,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: category != null ? AppColors.primary : AppColors.border, width: category != null ? 1.5 : 1),
+            border: Border.all(
+              color: categories.isNotEmpty ? AppColors.primary : AppColors.border,
+              width: categories.isNotEmpty ? 1.5 : 1,
+            ),
           ),
           child: Row(children: [
             const Icon(Icons.traffic_rounded, color: AppColors.textSecondary, size: 22),
             const SizedBox(width: 12),
-            Expanded(child: category == null
-                ? const Text('Select Offense Category *', style: TextStyle(color: AppColors.textTertiary, fontSize: 14))
-                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(category!.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary)),
-                    Text('${category!.code}  ·  MWK ${currFmt.format(category!.defaultAmount)}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  ])),
+            Expanded(
+              child: categories.isEmpty
+                  ? const Text('Select Offense Categories *', style: TextStyle(color: AppColors.textTertiary, fontSize: 14))
+                  : Text(
+                      '${categories.length} offense${categories.length == 1 ? '' : 's'} selected',
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.primary),
+                    ),
+            ),
+            Text(
+              categories.isEmpty ? 'Add' : 'Edit',
+              style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(width: 4),
             const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
           ]),
         ),
       ),
-      const SizedBox(height: 16),
-      // Fine amount (read-only)
-      if (category != null) Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: AppColors.paidLight, borderRadius: BorderRadius.circular(10)),
-        child: Row(children: [
-          const Icon(Icons.payments_rounded, color: AppColors.paid, size: 20),
-          const SizedBox(width: 12),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Fine Amount', style: TextStyle(fontSize: 11, color: AppColors.paid)),
-            Text('MWK ${currFmt.format(category!.defaultAmount)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.paid)),
+
+      // ── Selected offenses chips ───────────────────────────────────
+      if (categories.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        ...categories.map((cat) => Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Row(children: [
+            Container(
+              width: 32, height: 32,
+              decoration: BoxDecoration(color: AppColors.unpaidLight, borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.traffic_rounded, size: 16, color: AppColors.unpaid),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(cat.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              Text('${cat.code}  ·  MWK ${currFmt.format(cat.defaultAmount)}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            ])),
+            GestureDetector(
+              onTap: () => onRemoveCategory(cat),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                child: const Icon(Icons.close_rounded, color: AppColors.error, size: 16),
+              ),
+            ),
           ]),
-        ]),
-      ),
+        )),
+
+        // Total fine amount
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.paidLight, borderRadius: BorderRadius.circular(10)),
+          child: Row(children: [
+            const Icon(Icons.payments_rounded, color: AppColors.paid, size: 20),
+            const SizedBox(width: 12),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                categories.length == 1 ? 'Fine Amount' : 'Total Fine (${categories.length} offenses)',
+                style: const TextStyle(fontSize: 11, color: AppColors.paid),
+              ),
+              Text('MWK ${currFmt.format(totalAmount)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.paid)),
+            ]),
+          ]),
+        ),
+      ],
+
       const SizedBox(height: 16),
       // Date picker
       GestureDetector(
@@ -354,17 +434,24 @@ class _OffenseStep extends StatelessWidget {
 
 class _ReviewStep extends StatelessWidget {
   final String vehicleReg, offenderName;
-  final OffenseCategory? category;
+  final List<OffenseCategory> categories;
   final DateTime offenseDate;
   final String location;
 
-  const _ReviewStep({required this.vehicleReg, required this.offenderName, this.category, required this.offenseDate, required this.location});
+  const _ReviewStep({
+    required this.vehicleReg,
+    required this.offenderName,
+    required this.categories,
+    required this.offenseDate,
+    required this.location,
+  });
 
   @override
   Widget build(BuildContext context) {
     final dateFmt = DateFormat(AppConstants.dateDisplayFormat);
     final currFmt = NumberFormat('#,##0', 'en_US');
     final deadline = offenseDate.add(const Duration(days: AppConstants.trafficFineDeadlineDays));
+    final totalAmount = categories.fold<double>(0, (sum, c) => sum + c.defaultAmount);
 
     return Column(key: const ValueKey('review'), crossAxisAlignment: CrossAxisAlignment.start, children: [
       _StepHeader(icon: Icons.fact_check_rounded, title: 'Review & Confirm', subtitle: 'Verify all details before issuing the PRN'),
@@ -373,20 +460,46 @@ class _ReviewStep extends StatelessWidget {
       const SizedBox(height: 12),
       _SummarySection(title: 'Offender', rows: [InfoRow(label: 'Full Name', value: offenderName)]),
       const SizedBox(height: 12),
-      _SummarySection(title: 'Offense', rows: [
-        InfoRow(label: 'Category', value: category?.name ?? '—'),
-        InfoRow(label: 'Revenue Code', value: category?.revenueCode ?? '—'),
-        InfoRow(label: 'Offense Date', value: dateFmt.format(offenseDate)),
-        if (location.isNotEmpty) InfoRow(label: 'Location', value: location),
-      ]),
+      _SummarySection(
+        title: 'Offense${categories.length > 1 ? 's (${categories.length})' : ''}',
+        rows: [
+          ...categories.asMap().entries.map((entry) {
+            final i = entry.key;
+            final cat = entry.value;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (categories.length > 1) ...[
+                  if (i > 0) const Divider(height: 12),
+                  Text('Offense ${i + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary)),
+                  const SizedBox(height: 4),
+                ],
+                InfoRow(label: 'Category', value: cat.name),
+                InfoRow(label: 'Code', value: cat.code),
+                InfoRow(label: 'Revenue Code', value: cat.revenueCode),
+                InfoRow(label: 'Fine', value: 'MWK ${currFmt.format(cat.defaultAmount)}'),
+              ],
+            );
+          }),
+          if (categories.length > 1) ...[
+            const Divider(height: 12),
+            InfoRow(label: 'Total Fine', value: 'MWK ${currFmt.format(totalAmount)}', valueFontWeight: FontWeight.w800, valueColor: AppColors.primary),
+          ],
+          InfoRow(label: 'Offense Date', value: dateFmt.format(offenseDate)),
+          if (location.isNotEmpty) InfoRow(label: 'Location', value: location),
+        ],
+      ),
       const SizedBox(height: 12),
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
         child: Column(children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Fine Amount', style: TextStyle(color: Colors.white70, fontSize: 13)),
-            Text('MWK ${currFmt.format(category?.defaultAmount ?? 0)}', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+            Text(
+              categories.length > 1 ? 'Total Fine Amount' : 'Fine Amount',
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            Text('MWK ${currFmt.format(totalAmount)}', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
           ]),
           const SizedBox(height: 6),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -435,4 +548,3 @@ class _StepHeader extends StatelessWidget {
     ]);
   }
 }
-

@@ -33,7 +33,8 @@ class _ReviewConfirmPageState extends State<ReviewConfirmPage> {
     final deadline = (widget.data['offenseDate'] as DateTime).add(const Duration(days: AppConstants.trafficFineDeadlineDays));
 
     context.pushReplacement('/offense/prn-issued', extra: {
-      'prn': 'MPPRS-${DateTime.now().year}-${(100000 + DateTime.now().millisecondsSinceEpoch % 900000).toString()}',
+      // 'prn': 'MPPRS-${DateTime.now().year}-${(100000 + DateTime.now().millisecondsSinceEpoch % 900000).toString()}',
+      'prn': '2535001005566',
       'vehicleReg': widget.data['vehicleReg'],
       'offenderName': widget.data['offenderName'],
       'categoryName': category?.name ?? '',

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/mock/mock_data.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -93,19 +92,29 @@ class HomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // KPI Stats
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.6,
-                    children: [
-                      StatCard(label: 'Issued Today', value: '$todayIssued', icon: Icons.receipt_rounded, color: AppColors.info),
-                      StatCard(label: 'Paid Today', value: '$paidToday', icon: Icons.check_circle_rounded, color: AppColors.success),
-                      StatCard(label: 'Overdue', value: '$overdueCount', icon: Icons.warning_rounded, color: AppColors.error, onTap: () => context.go('/search')),
-                      StatCard(label: 'Pending Sync', value: '$pendingSync', icon: Icons.sync_rounded, color: AppColors.warning, onTap: () => context.go('/queue')),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Each card width = (total - spacing) / 2
+                      final cardWidth = (constraints.maxWidth - 12) / 2;
+                      // Card has 16px padding on each side, 36px icon box, 12px gap,
+                      // ~26px number, 4px gap, ~16px label text — minimum height ~120px
+                      final ratio = cardWidth / 120.0;
+                      final safeRatio = ratio.clamp(1.3, 2.0);
+                      return GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: safeRatio,
+                        children: [
+                          StatCard(label: 'Issued Today', value: '$todayIssued', icon: Icons.receipt_rounded, color: AppColors.info),
+                          StatCard(label: 'Paid Today', value: '$paidToday', icon: Icons.check_circle_rounded, color: AppColors.success),
+                          StatCard(label: 'Overdue', value: '$overdueCount', icon: Icons.warning_rounded, color: AppColors.error, onTap: () => context.go('/search')),
+                          StatCard(label: 'Pending Sync', value: '$pendingSync', icon: Icons.sync_rounded, color: AppColors.warning, onTap: () => context.go('/queue')),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                   // Quick Actions

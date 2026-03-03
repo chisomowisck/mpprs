@@ -31,7 +31,7 @@ class MockData {
   static List<TransactionEntity> get transactions => [
         TransactionEntity(
           id: 'txn001', type: TransactionType.trafficOffense, status: TransactionStatus.paid,
-          prn: 'MPPRS-2026-001234', categoryName: 'Speeding', categoryCode: 'TF-001', amount: 20000,
+          prn: '2535001005566', categoryName: 'Speeding', categoryCode: 'TF-001', amount: 20000,
           issuedAt: DateTime.now().subtract(const Duration(days: 5)),
           deadline: DateTime.now().subtract(const Duration(days: 5)).add(const Duration(days: 21)),
           paidAt: DateTime.now().subtract(const Duration(days: 3)),
@@ -40,7 +40,7 @@ class MockData {
         ),
         TransactionEntity(
           id: 'txn002', type: TransactionType.trafficOffense, status: TransactionStatus.issuedUnpaid,
-          prn: 'MPPRS-2026-001235', categoryName: 'Reckless Driving', categoryCode: 'TF-002', amount: 50000,
+          prn: '2535801005377', categoryName: 'Reckless Driving', categoryCode: 'TF-002', amount: 50000,
           issuedAt: DateTime.now().subtract(const Duration(days: 18)),
           deadline: DateTime.now().subtract(const Duration(days: 18)).add(const Duration(days: 21)),
           offenderName: 'Mary Chirwa', vehicleReg: 'MWK 5678',
@@ -48,7 +48,7 @@ class MockData {
         ),
         TransactionEntity(
           id: 'txn003', type: TransactionType.trafficOffense, status: TransactionStatus.overdue,
-          prn: 'MPPRS-2026-001210', categoryName: 'No Insurance Certificate', categoryCode: 'TF-004', amount: 30000,
+          prn: '2604401016547', categoryName: 'No Insurance Certificate', categoryCode: 'TF-004', amount: 30000,
           issuedAt: DateTime.now().subtract(const Duration(days: 30)),
           deadline: DateTime.now().subtract(const Duration(days: 30)).add(const Duration(days: 21)),
           offenderName: 'Peter Mbewe', vehicleReg: 'BT 3344',
@@ -56,7 +56,7 @@ class MockData {
         ),
         TransactionEntity(
           id: 'txn004', type: TransactionType.serviceFee, status: TransactionStatus.paid,
-          prn: 'MPPRS-2026-001180', categoryName: 'Police Clearance Certificate', categoryCode: 'SF-001', amount: 5000,
+          prn: '2656432895246', categoryName: 'Police Clearance Certificate', categoryCode: 'SF-001', amount: 5000,
           issuedAt: DateTime.now().subtract(const Duration(days: 10)),
           deadline: DateTime.now().subtract(const Duration(days: 10)).add(const Duration(days: 7)),
           paidAt: DateTime.now().subtract(const Duration(days: 8)),
@@ -65,7 +65,7 @@ class MockData {
         ),
         TransactionEntity(
           id: 'txn005', type: TransactionType.trafficOffense, status: TransactionStatus.voided,
-          prn: 'MPPRS-2026-001100', categoryName: 'Speeding', categoryCode: 'TF-001', amount: 20000,
+          prn: '2653654273373', categoryName: 'Speeding', categoryCode: 'TF-001', amount: 20000,
           issuedAt: DateTime.now().subtract(const Duration(days: 15)),
           deadline: DateTime.now().subtract(const Duration(days: 15)).add(const Duration(days: 21)),
           offenderName: 'David Nkosi', vehicleReg: 'ZB 9901',

@@ -6,7 +6,6 @@ import '../../features/dashboard/presentation/pages/home_page.dart';
 import '../../features/offense/presentation/pages/new_traffic_offense_page.dart';
 import '../../features/offense/presentation/pages/review_confirm_page.dart';
 import '../../features/offense/presentation/pages/prn_issued_page.dart';
-import '../../features/offense/presentation/pages/category_picker_page.dart';
 import '../../features/service_fee/presentation/pages/new_service_fee_page.dart';
 import '../../features/transactions/presentation/pages/search_page.dart';
 import '../../features/transactions/presentation/pages/transaction_detail_page.dart';

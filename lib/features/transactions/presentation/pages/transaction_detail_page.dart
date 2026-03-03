@@ -19,6 +19,7 @@ class TransactionDetailPage extends StatefulWidget {
 
 class _TransactionDetailPageState extends State<TransactionDetailPage> {
   bool _isVoiding = false;
+  bool _isPrinting = false;
 
   TransactionEntity? get _transaction =>
       MockData.transactions.where((t) => t.id == widget.transactionId).firstOrNull;
@@ -46,6 +47,26 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       context.pop();
     }
     reasonCtrl.dispose();
+  }
+
+  Future<void> _printReceipt(TransactionEntity tx) async {
+    setState(() => _isPrinting = true);
+    // Simulate print job delay (replace with actual print plugin call)
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    setState(() => _isPrinting = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text('Receipt for ${tx.prn ?? 'PRN'} sent to printer.')),
+        ]),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
@@ -127,6 +148,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
               ),
             ),
           ),
+          if (tx.status == TransactionStatus.paid)
+            _PrintReceiptBottomBar(isPrinting: _isPrinting, onPrint: () => _printReceipt(tx)),
           if (tx.canBeVoided)
             _VoidBottomBar(isVoiding: _isVoiding, onVoid: () => _showVoidDialog(tx)),
         ],
@@ -397,6 +420,35 @@ class _PaymentChannelsCard extends StatelessWidget {
             )).toList(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Print Receipt Bottom Bar ─────────────────────────────────────────────────
+
+class _PrintReceiptBottomBar extends StatelessWidget {
+  final bool isPrinting;
+  final VoidCallback onPrint;
+  const _PrintReceiptBottomBar({required this.isPrinting, required this.onPrint});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(color: AppColors.surface, boxShadow: AppColors.elevatedShadow),
+      child: ElevatedButton.icon(
+        onPressed: isPrinting ? null : onPrint,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.success,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        icon: isPrinting
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.print_rounded, size: 20),
+        label: Text(isPrinting ? 'Printing Receipt…' : 'Print Receipt'),
       ),
     );
   }
