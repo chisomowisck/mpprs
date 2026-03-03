@@ -16,27 +16,6 @@ This application integrates with the MPPRS backend, which in turn integrates wit
 
 ---
 
-## Project Structure (Recommended)
-
-```
-lib/
- ├── core/              # Shared utilities, theme, constants, UI kit
- ├── features/
- │    ├── auth/         # Login, device binding
- │    ├── offense/      # Traffic offense capture
- │    ├── service_fee/  # Police service fee capture
- │    ├── prn/          # PRN issuance & receipt
- │    ├── search/       # Search & filters
- │    ├── queue/        # Offline drafts & sync
- │    └── profile/      # User profile & settings
- ├── models/            # Data models
- ├── services/          # API services
- ├── state/             # State management
- └── main.dart
-```
-
----
-
 ## Key Features
 
 ### 1. Authentication & Device Binding
@@ -68,15 +47,6 @@ lib/
 - Draft saving without connectivity
 - Sync queue with retry support
 - Clear sync state indicators
-
----
-
-## UI & Design Principles
-- Modern, corporate, clean interface
-- Material 3-based design system
-- Minimal color usage with strong status indicators
-- Clear validation and feedback
-- Optimized for field use (low connectivity, fast operation)
 
 ---
 
@@ -123,13 +93,6 @@ flutter run
 - Production
 
 Environment configuration should be managed using secure environment variables or flavor-based builds.
-
----
-
-## Documentation
-- mpprs_srs.md – Mobile application requirements (business logic)
-- mpprs_ui_guidelines.md – UI design guidelines
-- system_architecture.md – System architecture guidelines
 
 ---
 
