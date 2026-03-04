@@ -8,6 +8,7 @@ import '../../../../core/ui/widgets/app_card.dart';
 import '../../../../core/ui/widgets/app_widgets.dart';
 import '../../../../core/ui/widgets/transaction_list_item.dart';
 import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../../../features/dashboard/presentation/cubit/dashboard_prefs_cubit.dart';
 import '../../../../features/transactions/domain/entities/transaction_entity.dart';
 
 class HomePage extends StatelessWidget {
@@ -22,146 +23,200 @@ class HomePage extends StatelessWidget {
     final overdueCount = transactions.where((t) => t.status == TransactionStatus.overdue).length;
     final pendingSync = transactions.where((t) => t.status == TransactionStatus.pendingSync).length;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 140,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.primary,
-            surfaceTintColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.primaryLight],
+    return BlocBuilder<DashboardPrefsCubit, DashboardPrefsState>(
+      builder: (context, prefs) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 140,
+                floating: false,
+                pinned: true,
+                backgroundColor: AppColors.primary,
+                surfaceTintColor: Colors.transparent,
+                actions: [
+                  Tooltip(
+                    message: prefs.showStatsCards ? 'Hide stats' : 'Show stats',
+                    child: IconButton(
+                      icon: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        child: Icon(
+                          prefs.showStatsCards
+                              ? Icons.bar_chart_rounded
+                              : Icons.bar_chart_outlined,
+                          key: ValueKey(prefs.showStatsCards),
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                      onPressed: () =>
+                          context.read<DashboardPrefsCubit>().toggleStatsCards(),
+                    ),
                   ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  const SizedBox(width: 4),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppColors.primary, AppColors.primaryLight],
+                      ),
+                    ),
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Good ${_greeting()}, ${user.fullName.split(' ').first}',
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Good ${_greeting()}, ${user.fullName.split(' ').first}',
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${user.stationName}  ·  ${user.roleLabel}',
+                                        style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${user.stationName}  ·  ${user.roleLabel}',
-                                    style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => context.go('/profile'),
-                              child: CircleAvatar(
-                                radius: 22,
-                                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                child: Text(
-                                  user.fullName.split(' ').map((w) => w[0]).take(2).join(),
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
                                 ),
-                              ),
+                                GestureDetector(
+                                  onTap: () => context.go('/profile'),
+                                  child: CircleAvatar(
+                                    radius: 22,
+                                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                    child: Text(
+                                      user.fullName.split(' ').map((w) => w[0]).take(2).join(),
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // KPI Stats
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Each card width = (total - spacing) / 2
-                      final cardWidth = (constraints.maxWidth - 12) / 2;
-                      // Card has 16px padding on each side, 36px icon box, 12px gap,
-                      // ~26px number, 4px gap, ~16px label text — minimum height ~120px
-                      final ratio = cardWidth / 120.0;
-                      final safeRatio = ratio.clamp(1.3, 2.0);
-                      return GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: safeRatio,
-                        children: [
-                          StatCard(label: 'Issued Today', value: '$todayIssued', icon: Icons.receipt_rounded, color: AppColors.info),
-                          StatCard(label: 'Paid Today', value: '$paidToday', icon: Icons.check_circle_rounded, color: AppColors.success),
-                          StatCard(label: 'Overdue', value: '$overdueCount', icon: Icons.warning_rounded, color: AppColors.error, onTap: () => context.go('/search')),
-                          StatCard(label: 'Pending Sync', value: '$pendingSync', icon: Icons.sync_rounded, color: AppColors.warning, onTap: () => context.go('/queue')),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  // Quick Actions
-                  const SectionHeader(title: 'Quick Actions'),
-                  const SizedBox(height: 12),
-                  Row(
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _QuickAction(icon: Icons.add_road_rounded, label: 'New Traffic\nOffense', color: AppColors.primary, onTap: () => context.go('/offense/new'))),
-                      const SizedBox(width: 12),
-                      Expanded(child: _QuickAction(icon: Icons.receipt_long_rounded, label: 'New Service\nFee', color: AppColors.secondary, onTap: () => context.go('/service-fee/new'))),
-                      const SizedBox(width: 12),
-                      Expanded(child: _QuickAction(icon: Icons.search_rounded, label: 'Search\nPRN', color: AppColors.info, onTap: () => context.go('/search'))),
+                      // KPI Stats — animated show/hide
+                      AnimatedCrossFade(
+                        duration: const Duration(milliseconds: 300),
+                        crossFadeState: prefs.showStatsCards
+                            ? CrossFadeState.showFirst
+                            : CrossFadeState.showSecond,
+                        firstChild: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final cardWidth = (constraints.maxWidth - 12) / 2;
+                            final ratio = cardWidth / 130.0;
+                            final safeRatio = ratio.clamp(1.3, 2.0);
+                            return GridView.count(
+                              crossAxisCount: 2,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: safeRatio,
+                              children: [
+                                StatCard(label: 'Issued Today', value: '$todayIssued', icon: Icons.receipt_rounded, color: AppColors.info),
+                                StatCard(label: 'Paid Today', value: '$paidToday', icon: Icons.check_circle_rounded, color: AppColors.success),
+                                StatCard(label: 'Overdue', value: '$overdueCount', icon: Icons.warning_rounded, color: AppColors.error, onTap: () => context.go('/search')),
+                                StatCard(label: 'Pending Sync', value: '$pendingSync', icon: Icons.sync_rounded, color: AppColors.warning, onTap: () => context.go('/queue')),
+                              ],
+                            );
+                          },
+                        ),
+                        secondChild: GestureDetector(
+                          onTap: () => context.read<DashboardPrefsCubit>().toggleStatsCards(),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.border.withValues(alpha: 0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.bar_chart_rounded, size: 16, color: AppColors.textTertiary),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Stats hidden — tap to show',
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Quick Actions
+                      const SectionHeader(title: 'Quick Actions'),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(child: _QuickAction(icon: Icons.add_road_rounded, label: 'New Traffic\nOffense', color: AppColors.primary, onTap: () => context.go('/offense/new'))),
+                          const SizedBox(width: 12),
+                          Expanded(child: _QuickAction(icon: Icons.receipt_long_rounded, label: 'New Service\nFee', color: AppColors.secondary, onTap: () => context.go('/service-fee/new'))),
+                          const SizedBox(width: 12),
+                          Expanded(child: _QuickAction(icon: Icons.search_rounded, label: 'Search\nPRN', color: AppColors.info, onTap: () => context.go('/search'))),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      // Recent Transactions
+                      SectionHeader(title: 'Recent Transactions', actionLabel: 'View All', onAction: () => context.go('/search')),
+                      const SizedBox(height: 12),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  // Recent Transactions
-                  SectionHeader(title: 'Recent Transactions', actionLabel: 'View All', onAction: () => context.go('/search')),
-                  const SizedBox(height: 12),
-                ],
+                ),
               ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, i) {
-                  if (i < transactions.length - 1) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: TransactionListItem(
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) {
+                      if (i < transactions.length - 1) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: TransactionListItem(
+                            transaction: transactions[i],
+                            onTap: () => context.push('/transaction/${transactions[i].id}'),
+                          ),
+                        );
+                      }
+                      return TransactionListItem(
                         transaction: transactions[i],
                         onTap: () => context.push('/transaction/${transactions[i].id}'),
-                      ),
-                    );
-                  }
-                  return TransactionListItem(
-                    transaction: transactions[i],
-                    onTap: () => context.push('/transaction/${transactions[i].id}'),
-                  );
-                },
-                childCount: transactions.length,
+                      );
+                    },
+                    childCount: transactions.length,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

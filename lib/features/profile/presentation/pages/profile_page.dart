@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../features/auth/domain/entities/user_entity.dart';
 import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../../../features/dashboard/presentation/cubit/dashboard_prefs_cubit.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -32,6 +33,8 @@ class ProfilePage extends StatelessWidget {
                   _IdentityCard(user: user),
                   const SizedBox(height: 16),
                   _PermissionsCard(user: user),
+                  const SizedBox(height: 16),
+                  _DisplayCard(),
                   const SizedBox(height: 16),
                   _AppInfoCard(),
                   const SizedBox(height: 16),
@@ -150,6 +153,31 @@ class _PermissionsCard extends StatelessWidget {
         _PermissionRow(label: 'View Station PRNs', granted: user.canViewStationPrns),
         _PermissionRow(label: 'Export / Finance Reports', granted: user.role == UserRole.financeViewer),
       ],
+    );
+  }
+}
+
+// ─── Display Preferences Card ────────────────────────────────────────────────
+
+class _DisplayCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardPrefsCubit, DashboardPrefsState>(
+      builder: (context, prefs) {
+        return _Section(
+          title: 'DISPLAY',
+          icon: Icons.tune_rounded,
+          children: [
+            _ToggleRow(
+              label: 'Show Stats Cards',
+              subtitle: 'Show KPI summary cards on the home screen',
+              value: prefs.showStatsCards,
+              onChanged: (v) =>
+                  context.read<DashboardPrefsCubit>().setStatsCards(visible: v),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -291,3 +319,39 @@ class _PermissionRow extends StatelessWidget {
   }
 }
 
+// ─── Toggle Row ────────────────────────────────────────────────────────────────
+
+class _ToggleRow extends StatelessWidget {
+  final String label;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _ToggleRow({required this.label, required this.subtitle, required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textTertiary)),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+}
