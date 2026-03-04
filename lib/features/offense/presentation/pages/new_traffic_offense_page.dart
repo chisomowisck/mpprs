@@ -85,8 +85,11 @@ class _NewTrafficOffensePageState extends State<NewTrafficOffensePage> {
       );
       return;
     }
-    if (_step < 3) setState(() => _step++);
-    else _submit();
+    if (_step < 3) {
+      setState(() => _step++);
+    } else {
+      _submit();
+    }
   }
 
   void _submit() {

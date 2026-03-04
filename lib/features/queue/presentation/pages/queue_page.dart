@@ -123,7 +123,7 @@ class _QueuePageState extends State<QueuePage> {
                 : ListView.separated(
                     padding: const EdgeInsets.all(AppConstants.pagePadding),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (_, i) => _QueueItem(
                       transaction: items[i],
                       onRetry: () {

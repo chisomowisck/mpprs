@@ -25,7 +25,9 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
 
   @override
   void dispose() {
-    for (final c in [_citizenIdCtrl, _nameCtrl, _phoneCtrl, _descCtrl]) c.dispose();
+    for (final c in [_citizenIdCtrl, _nameCtrl, _phoneCtrl, _descCtrl]) {
+      c.dispose();
+    }
     super.dispose();
   }
 

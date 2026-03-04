@@ -143,7 +143,7 @@ class _SearchPageState extends State<SearchPage> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
                     itemCount: results.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (_, i) => TransactionListItem(
                       transaction: results[i],
                       onTap: () => context.push('/transaction/${results[i].id}'),

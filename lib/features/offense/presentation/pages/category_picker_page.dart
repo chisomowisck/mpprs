@@ -200,7 +200,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: cats.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) => _CategoryTile(
         code: cats[i].code,
         name: cats[i].name,
