@@ -11,6 +11,7 @@ import '../../features/transactions/presentation/pages/search_page.dart';
 import '../../features/transactions/presentation/pages/transaction_detail_page.dart';
 import '../../features/queue/presentation/pages/queue_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../core/theme/app_colors.dart';
 import '../../features/shell/shell_page.dart';
 
 final appRouter = GoRouter(
@@ -107,7 +108,7 @@ class _NewChooserPage extends StatelessWidget {
               icon: Icons.traffic_rounded,
               title: 'Traffic Offense',
               subtitle: 'Issue a PRN for a road traffic offense',
-              color: const Color(0xFF1A3C5E),
+              color: AppColors.primary,
               onTap: () => context.push('/offense/new'),
             ),
             const SizedBox(height: 16),
@@ -115,7 +116,7 @@ class _NewChooserPage extends StatelessWidget {
               icon: Icons.receipt_long_rounded,
               title: 'Service Fee',
               subtitle: 'Issue a PRN for a police service request',
-              color: const Color(0xFFE8A020),
+              color: AppColors.secondary,
               onTap: () => context.push('/service-fee/new'),
             ),
           ],

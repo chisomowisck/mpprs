@@ -19,7 +19,7 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  ServiceCategory? _category;
+  List<ServiceCategory> _categories = [];
   DateTime _requestDate = DateTime.now();
   bool _isSubmitting = false;
 
@@ -32,10 +32,18 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
   }
 
   Future<void> _pickCategory() async {
-    final result = await Navigator.of(context).push<ServiceCategory>(
-      MaterialPageRoute(builder: (_) => const CategoryPickerPage(isServiceFee: true)),
+    final result = await Navigator.of(context).push<List<ServiceCategory>>(
+      MaterialPageRoute(
+        builder: (_) => CategoryPickerPage(
+          isServiceFee: true,
+          multiSelect: true,
+          selectedServiceCategories: _categories,
+        ),
+      ),
     );
-    if (result != null) setState(() => _category = result);
+    if (result != null && result.isNotEmpty) {
+      setState(() => _categories = result);
+    }
   }
 
   Future<void> _pickDate() async {
@@ -54,23 +62,26 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (_category == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a service category.'), backgroundColor: AppColors.error));
+    if (_categories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one service category.'), backgroundColor: AppColors.error));
       return;
     }
     setState(() => _isSubmitting = true);
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
-    final deadline = _requestDate.add(Duration(days: _category!.deadlineDays));
+    final totalAmount = _categories.fold<double>(0, (sum, c) => sum + c.defaultAmount);
+    // Find the shortest deadline among selected services
+    final minDeadline = _categories.map((c) => c.deadlineDays).reduce((a, b) => a < b ? a : b);
+    final deadline = _requestDate.add(Duration(days: minDeadline));
+
     context.pushReplacement('/offense/prn-issued', extra: {
-      // 'prn': 'MPPRS-${DateTime.now().year}-${(200000 + DateTime.now().millisecondsSinceEpoch % 800000)}',
       'prn': '2656432895246',
       'vehicleReg': '',
       'offenderName': _nameCtrl.text.trim(),
-      'categoryName': _category!.name,
-      'categoryCode': _category!.code,
-      'amount': _category!.defaultAmount,
+      'categoryName': _categories.length == 1 ? _categories.first.name : '${_categories.length} Services Selected',
+      'categoryCode': _categories.length == 1 ? _categories.first.code : 'MULTIPLE',
+      'amount': totalAmount,
       'deadline': deadline,
       'offenseDate': _requestDate,
       'location': '',
@@ -78,6 +89,7 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
       'officerName': 'Sgt. Samuel Phiri',
       'stationName': 'Lilongwe Central Police Station',
       'isTrafficOffense': false,
+      'categories': _categories, // Pass the full list for potential use in issuance page
     });
   }
 
@@ -85,6 +97,7 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
   Widget build(BuildContext context) {
     final dateFmt = DateFormat(AppConstants.dateDisplayFormat);
     final currFmt = NumberFormat('#,##0', 'en_US');
+    final totalAmount = _categories.fold<double>(0, (sum, c) => sum + c.defaultAmount);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -132,21 +145,62 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
                         decoration: BoxDecoration(
                           color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: _category != null ? AppColors.primary : AppColors.border, width: _category != null ? 1.5 : 1),
+                          border: Border.all(color: _categories.isNotEmpty ? AppColors.primary : AppColors.border, width: _categories.isNotEmpty ? 1.5 : 1),
                         ),
                         child: Row(children: [
                           const Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary, size: 22),
                           const SizedBox(width: 12),
-                          Expanded(child: _category == null
-                              ? const Text('Select Service Category *', style: TextStyle(color: AppColors.textTertiary, fontSize: 14))
-                              : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text(_category!.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary)),
-                                  Text('${_category!.code}  ·  MWK ${currFmt.format(_category!.defaultAmount)}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                ])),
+                          Expanded(
+                            child: _categories.isEmpty
+                                ? const Text('Select Service Category *', style: TextStyle(color: AppColors.textTertiary, fontSize: 14))
+                                : Text(
+                                    '${_categories.length} service${_categories.length == 1 ? '' : 's'} selected',
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.primary),
+                                  ),
+                          ),
+                          Text(
+                            _categories.isEmpty ? 'Add' : 'Edit',
+                            style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(width: 4),
                           const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
                         ]),
                       ),
                     ),
+                    if (_categories.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      ..._categories.map((cat) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                              boxShadow: AppColors.cardShadow,
+                            ),
+                            child: Row(children: [
+                              Container(
+                                width: 32, height: 32,
+                                decoration: BoxDecoration(color: AppColors.unpaidLight, borderRadius: BorderRadius.circular(8)),
+                                child: const Icon(Icons.receipt_long_rounded, size: 16, color: AppColors.unpaid),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(cat.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                Text('${cat.code}  ·  MWK ${currFmt.format(cat.defaultAmount)}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              ])),
+                              GestureDetector(
+                                onTap: () => setState(() => _categories.remove(cat)),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                                  child: const Icon(Icons.close_rounded, color: AppColors.error, size: 16),
+                                ),
+                              ),
+                            ]),
+                          )),
+                    ],
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: _descCtrl,
@@ -168,7 +222,7 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
                         ]),
                       ),
                     ),
-                    if (_category != null) ...[
+                    if (_categories.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.all(14),
@@ -178,12 +232,15 @@ class _NewServiceFeePageState extends State<NewServiceFeePage> {
                         ),
                         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            const Text('Service Fee', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                            Text('MWK ${currFmt.format(_category!.defaultAmount)}', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+                            Text(
+                              _categories.length == 1 ? 'Service Fee' : 'Total Service Fees',
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                            Text('MWK ${currFmt.format(totalAmount)}', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
                           ]),
                           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                             const Text('Payment Window', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                            Text('${_category!.deadlineDays} days', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                            Text('${_categories.map((c) => c.deadlineDays).reduce((a, b) => a < b ? a : b)} days', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                           ]),
                         ]),
                       ),

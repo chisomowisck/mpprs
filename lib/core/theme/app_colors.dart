@@ -4,11 +4,12 @@ class AppColors {
   AppColors._();
 
   // Brand
-  static const Color primary = Color(0xFF1A3C5E);
-  static const Color primaryVariant = Color(0xFF0D2741);
-  static const Color primaryLight = Color(0xFF2D5F8A);
-  static const Color secondary = Color(0xFFE8A020);
-  static const Color secondaryLight = Color(0xFFFFF3E0);
+  // static const Color primary = Color(0xFF3095C7);
+    static const Color primary = Color(0xFF1A3C5E);
+  static const Color primaryVariant = Color(0xFF1A3C5E);
+  static const Color primaryLight = Color(0xFF4A90E2);
+  static const Color secondary = Color(0xFFFBCB33);
+  static const Color secondaryLight = Color(0xFFFFF7DB);
 
   // Surfaces
   static const Color background = Color(0xFFF4F6FB);

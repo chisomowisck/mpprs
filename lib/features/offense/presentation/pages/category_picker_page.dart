@@ -10,12 +10,14 @@ class CategoryPickerPage extends StatefulWidget {
   final bool multiSelect;
   /// Pre-selected categories when opening in multi-select mode.
   final List<OffenseCategory> selectedCategories;
+  final List<ServiceCategory> selectedServiceCategories;
 
   const CategoryPickerPage({
     super.key,
     this.isServiceFee = false,
     this.multiSelect = false,
     this.selectedCategories = const [],
+    this.selectedServiceCategories = const [],
   });
 
   @override
@@ -30,7 +32,11 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
   @override
   void initState() {
     super.initState();
-    _selectedIds = widget.selectedCategories.map((c) => c.id).toSet();
+    if (widget.isServiceFee) {
+      _selectedIds = widget.selectedServiceCategories.map((c) => c.id).toSet();
+    } else {
+      _selectedIds = widget.selectedCategories.map((c) => c.id).toSet();
+    }
   }
 
   List<OffenseCategory> get _filteredOffense {
@@ -59,21 +65,28 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
     super.dispose();
   }
 
-  void _toggleOffense(OffenseCategory cat) {
+  void _toggleCategory(String id) {
     setState(() {
-      if (_selectedIds.contains(cat.id)) {
-        _selectedIds.remove(cat.id);
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
       } else {
-        _selectedIds.add(cat.id);
+        _selectedIds.add(id);
       }
     });
   }
 
   void _confirmMultiSelect() {
-    final selected = MockData.offenseCategories
-        .where((c) => _selectedIds.contains(c.id))
-        .toList();
-    Navigator.of(context).pop(selected);
+    if (widget.isServiceFee) {
+      final selected = MockData.serviceCategories
+          .where((c) => _selectedIds.contains(c.id))
+          .toList();
+      Navigator.of(context).pop(selected);
+    } else {
+      final selected = MockData.offenseCategories
+          .where((c) => _selectedIds.contains(c.id))
+          .toList();
+      Navigator.of(context).pop(selected);
+    }
   }
 
   @override
@@ -122,7 +135,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '${_selectedIds.length} offense${_selectedIds.length == 1 ? '' : 's'} selected',
+                    '${_selectedIds.length} ${widget.isServiceFee ? 'service' : 'offense'}${_selectedIds.length == 1 ? '' : 's'} selected',
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
                   ),
                 ),
@@ -148,8 +161,8 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                 onPressed: _selectedIds.isNotEmpty ? _confirmMultiSelect : null,
                 icon: const Icon(Icons.check_circle_rounded, size: 18),
                 label: Text(_selectedIds.isEmpty
-                    ? 'Select at least one offense'
-                    : 'Confirm ${_selectedIds.length} Offense${_selectedIds.length == 1 ? '' : 's'}'),
+                    ? 'Select at least one ${widget.isServiceFee ? 'service' : 'offense'}'
+                    : 'Confirm ${_selectedIds.length} ${widget.isServiceFee ? 'Service' : 'Offense'}${_selectedIds.length == 1 ? '' : 's'}'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -183,7 +196,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                 multiSelect: widget.multiSelect,
                 isSelected: isSelected,
                 onTap: widget.multiSelect
-                    ? () => _toggleOffense(cat)
+                    ? () => _toggleCategory(cat.id)
                     : () => Navigator.of(context).pop(cat),
               );
             }),
@@ -201,13 +214,21 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
       padding: const EdgeInsets.all(16),
       itemCount: cats.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (_, i) => _CategoryTile(
-        code: cats[i].code,
-        name: cats[i].name,
-        amount: cats[i].defaultAmount,
-        onTap: () => Navigator.of(context).pop(cats[i]),
-        currencyFmt: fmt,
-      ),
+      itemBuilder: (_, i) {
+        final cat = cats[i];
+        final isSelected = _selectedIds.contains(cat.id);
+        return _CategoryTile(
+          code: cat.code,
+          name: cat.name,
+          amount: cat.defaultAmount,
+          currencyFmt: fmt,
+          multiSelect: widget.multiSelect,
+          isSelected: isSelected,
+          onTap: widget.multiSelect
+              ? () => _toggleCategory(cat.id)
+              : () => Navigator.of(context).pop(cat),
+        );
+      },
     );
   }
 

@@ -35,27 +35,7 @@ class HomePage extends StatelessWidget {
                 pinned: true,
                 backgroundColor: AppColors.primary,
                 surfaceTintColor: Colors.transparent,
-                actions: [
-                  Tooltip(
-                    message: prefs.showStatsCards ? 'Hide stats' : 'Show stats',
-                    child: IconButton(
-                      icon: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: Icon(
-                          prefs.showStatsCards
-                              ? Icons.bar_chart_rounded
-                              : Icons.bar_chart_outlined,
-                          key: ValueKey(prefs.showStatsCards),
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      ),
-                      onPressed: () =>
-                          context.read<DashboardPrefsCubit>().toggleStatsCards(),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                ],
+
                 flexibleSpace: FlexibleSpaceBar(
                   background: Container(
                     decoration: const BoxDecoration(
@@ -116,6 +96,34 @@ class HomePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // KPI Stats — animated show/hide
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Expanded(child: SectionHeader(title: 'Stats')),
+                          Tooltip(
+                            message: prefs.showStatsCards ? 'Hide stats' : 'Show stats',
+                            child: InkWell(
+                              onTap: () => context.read<DashboardPrefsCubit>().toggleStatsCards(),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  child: Icon(
+                                    prefs.showStatsCards
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    key: ValueKey(prefs.showStatsCards),
+                                    size: 18,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
                       AnimatedCrossFade(
                         duration: const Duration(milliseconds: 300),
                         crossFadeState: prefs.showStatsCards

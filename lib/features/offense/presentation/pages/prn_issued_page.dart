@@ -124,13 +124,33 @@ class PrnIssuedPage extends StatelessWidget {
                           padding: const EdgeInsets.all(14),
                           child: Column(
                             children: [
-                              InfoRow(label: 'Offender', value: offenderName),
+                               InfoRow(label: 'Offender', value: offenderName),
                               if (vehicleReg.isNotEmpty) InfoRow(label: 'Vehicle Reg.', value: vehicleReg),
                               const Divider(height: 16),
-                              InfoRow(label: 'Offense', value: categoryName, valueFontWeight: FontWeight.w700),
+                              if (data['categories'] != null && (data['categories'] as List).length > 1) ...[
+                                const Text('DETAILS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 1)),
+                                const SizedBox(height: 8),
+                                ...(data['categories'] as List).asMap().entries.map((entry) {
+                                  final i = entry.key;
+                                  final cat = entry.value;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(child: Text('${i + 1}. ${cat.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
+                                        Text('MWK ${currFmt.format(cat.defaultAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ] else ...[
+                                InfoRow(label: data['isTrafficOffense'] == false ? 'Service' : 'Offense', value: categoryName, valueFontWeight: FontWeight.w700),
+                              ],
                               if (maltisRef.isNotEmpty) InfoRow(label: 'MALTIS Ref.', value: maltisRef),
-                              InfoRow(label: 'Amount', value: 'MWK ${currFmt.format(amount)}', valueColor: AppColors.primary, valueFontWeight: FontWeight.w800),
-                              InfoRow(label: 'Deadline', value: fmt.format(deadline), valueColor: AppColors.warning, valueFontWeight: FontWeight.w700),
+                              const Divider(height: 16),
+                              InfoRow(label: 'TOTAL AMOUNT', value: 'MWK ${currFmt.format(amount)}', valueColor: AppColors.primary, valueFontWeight: FontWeight.w800),
+                              InfoRow(label: 'Payment Deadline', value: fmt.format(deadline), valueColor: AppColors.warning, valueFontWeight: FontWeight.w700),
                               const Divider(height: 16),
                               InfoRow(label: 'Officer', value: officerName),
                               InfoRow(label: 'Station', value: stationName),

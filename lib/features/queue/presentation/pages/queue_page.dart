@@ -170,7 +170,6 @@ class _QueueItem extends StatelessWidget {
     final dateFmt = DateFormat(AppConstants.dateDisplayFormat);
     final tx = transaction;
     final isFailed = tx.status == TransactionStatus.failedSync;
-    final isDraft = tx.status == TransactionStatus.draft;
 
     return Container(
       decoration: BoxDecoration(
